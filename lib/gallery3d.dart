@@ -37,8 +37,6 @@ class Gallery3D extends StatefulWidget {
 
 class _Gallery3DState extends State<Gallery3D>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-  // var scale = 1.0;
-
   List<Widget> imageWidgetList = [];
   AnimationController _timerAnimationController;
   Animation _timerAnimation;
@@ -49,9 +47,13 @@ class _Gallery3DState extends State<Gallery3D>
   Map<int, GlobalKey<_GalleryItemState>> globalKeyMap =
       Map<int, GlobalKey<_GalleryItemState>>();
 
+  ///单位角度
+  double unitAngle = 0;
+
   ///当前索引
   int currentIndex = -1;
-  //生命周期状态,
+
+  ///生命周期状态,
   AppLifecycleState appLifecycleState = AppLifecycleState.resumed;
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -61,6 +63,7 @@ class _Gallery3DState extends State<Gallery3D>
 
   @override
   void initState() {
+    unitAngle = 360 / widget.itemCount;
     _onFocusImageChanged(widget.currentIndex, 1, false);
     if (widget.autoLoop) {
       perimeter = calculatePerimeter(widget.itemConfig.itemWidth * 0.8, 50);
@@ -114,6 +117,9 @@ class _Gallery3DState extends State<Gallery3D>
 
   var onTouching = false;
   var lastTouchMillisecond = 0;
+  Offset panDownLocation;
+  Offset lastUpdateLocation;
+  int onPanDownIndex = -1; //在手指按下的时候的index
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -122,7 +128,9 @@ class _Gallery3DState extends State<Gallery3D>
       child: GestureDetector(
         //按下
         onPanDown: (details) {
+          onPanDownIndex = currentIndex;
           onTouching = true;
+          panDownLocation = details.localPosition;
           lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
         },
         //抬起
@@ -135,6 +143,7 @@ class _Gallery3DState extends State<Gallery3D>
         },
         //更新
         onPanUpdate: (details) {
+          lastUpdateLocation = details.localPosition;
           lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
           var dx = details.delta.dx;
           globalKeyMap.forEach((key, value) {
@@ -154,23 +163,36 @@ class _Gallery3DState extends State<Gallery3D>
     _autoScrollAnimationController =
         AnimationController(duration: Duration(milliseconds: 200), vsync: this);
     Animation animation;
+    double target = 0;
 
-    if (angle > 180) {
-      var target = (angle - 180) / 360 * perimeter;
-      animation = Tween(begin: 0.0, end: target)
-          .animate(_autoScrollAnimationController);
+    var offsetX = lastUpdateLocation.dx - panDownLocation.dx;
+    //当偏移量超过屏幕的10%宽度的时候且手指按下时候的索引和手指抬起来时候的索引一样的时候
+    if (onPanDownIndex == currentIndex &&
+        offsetX.abs() > MediaQuery.of(context).size.width * 0.1) {
+      if (offsetX > 0) {
+        target = (angle - 180 + unitAngle) / 360 * perimeter;
+      } else {
+        target = -(180 + unitAngle - angle) / 360 * perimeter;
+      }
     } else {
-      var target = -(180 - angle) / 360 * perimeter;
-      animation = Tween(begin: 0.0, end: target)
-          .animate(_autoScrollAnimationController);
+      if (angle > 180) {
+        target = (angle - 180) / 360 * perimeter;
+      } else {
+        target = -(180 - angle) / 360 * perimeter;
+      }
     }
-    double last = 0;
+
+    if (target == 0) return;
+    animation =
+        Tween(begin: 0.0, end: target).animate(_autoScrollAnimationController);
+
+    double lastValue = 0;
     animation.addListener(() {
-      var offsetX = animation.value - last;
+      var offsetX = animation.value - lastValue;
       globalKeyMap.forEach((key, value) {
         value.currentState.updateTransform(Offset(offsetX, 0));
       });
-      last = animation.value;
+      lastValue = animation.value;
     });
     _autoScrollAnimationController.forward();
     _autoScrollAnimationController.addListener(() {
@@ -200,11 +222,11 @@ class _Gallery3DState extends State<Gallery3D>
 
   ///焦点图片改变的时候更新图片的在Stack中的顺序
   void _onFocusImageChanged(int index, int direction, bool refresh) {
-    if (currentIndex == index) return;
+    // if (currentIndex == index) return;
     if (refresh) {
       widget.onItemChanged(index);
     }
-    double angle = 360 / widget.itemCount;
+
     currentIndex = index;
     var preIndex = getPreIndex(currentIndex);
     var nextIndex = getNextIndex(currentIndex);
@@ -217,8 +239,8 @@ class _Gallery3DState extends State<Gallery3D>
         forIndex = widget.itemCount + forIndex;
       }
       if (forIndex != nextIndex && forIndex != preIndex) {
-        widgetList
-            .add(_buildGalleryItem(forIndex, false, 180 + angle * i, angle));
+        widgetList.add(
+            _buildGalleryItem(forIndex, false, 180 + unitAngle * i, unitAngle));
       }
 
       forIndex--;
@@ -228,35 +250,37 @@ class _Gallery3DState extends State<Gallery3D>
     if (refresh) {
       if (direction > 0) {
         if (globalKeyMap[currentIndex].currentState.angle < 180) {
-          widgetList
-              .add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
-          widgetList
-              .add(_buildGalleryItem(preIndex, false, angle - 180, angle));
+          widgetList.add(
+              _buildGalleryItem(nextIndex, false, 180 - unitAngle, unitAngle));
+          widgetList.add(
+              _buildGalleryItem(preIndex, false, unitAngle - 180, unitAngle));
         } else {
-          widgetList
-              .add(_buildGalleryItem(preIndex, false, angle - 180, angle));
-          widgetList
-              .add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
+          widgetList.add(
+              _buildGalleryItem(preIndex, false, unitAngle - 180, unitAngle));
+          widgetList.add(
+              _buildGalleryItem(nextIndex, false, 180 - unitAngle, unitAngle));
         }
       } else {
         if (globalKeyMap[currentIndex].currentState.angle < 180) {
-          widgetList
-              .add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
-          widgetList
-              .add(_buildGalleryItem(preIndex, false, angle - 180, angle));
+          widgetList.add(
+              _buildGalleryItem(nextIndex, false, 180 - unitAngle, unitAngle));
+          widgetList.add(
+              _buildGalleryItem(preIndex, false, unitAngle - 180, unitAngle));
         } else {
-          widgetList
-              .add(_buildGalleryItem(preIndex, false, angle - 180, angle));
-          widgetList
-              .add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
+          widgetList.add(
+              _buildGalleryItem(preIndex, false, unitAngle - 180, unitAngle));
+          widgetList.add(
+              _buildGalleryItem(nextIndex, false, 180 - unitAngle, unitAngle));
         }
       }
     } else {
-      widgetList.add(_buildGalleryItem(preIndex, false, angle - 180, angle));
-      widgetList.add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
+      widgetList
+          .add(_buildGalleryItem(preIndex, false, unitAngle - 180, unitAngle));
+      widgetList
+          .add(_buildGalleryItem(nextIndex, false, 180 - unitAngle, unitAngle));
     }
 
-    widgetList.add(_buildGalleryItem(currentIndex, false, 180, angle));
+    widgetList.add(_buildGalleryItem(currentIndex, false, 180, unitAngle));
 
     imageWidgetList = widgetList;
 
