@@ -1,8 +1,8 @@
 name: flutter_gallery_3d
-description: A new Flutter package project.
+description: 3d gallery
 version: 0.0.1
-author:
-homepage:
+author: leeorz
+homepage: https://github.com/lazyee/flutter_gallery_3d
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
