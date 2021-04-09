@@ -6,35 +6,37 @@ import 'package:flutter/material.dart';
 int minCount = 3;
 
 class Gallery3D extends StatefulWidget {
-  final double itemWidth;
-  final double itemHeight;
   final int itemCount;
-  final double itemRadius;
-  final IndexedWidgetBuilder itemBuilder;
+  final GalleryItemConfig itemConfig;
   final bool autoLoop;
   final int delayTime;
   final int scrollTime;
+  final int currentIndex;
+  final IndexedWidgetBuilder itemBuilder;
+  final Function(int) onItemChanged;
   final Function(int) onClickItem;
 
   Gallery3D(
       {Key key,
-      this.itemWidth = 220.0,
-      this.itemHeight = 300.0,
       this.autoLoop = true,
       this.delayTime = 5000,
       this.scrollTime = 800,
-      this.itemRadius = 0,
+      this.currentIndex = 0,
       this.onClickItem,
+      this.onItemChanged,
+      @required this.itemConfig,
       @required this.itemCount,
       @required this.itemBuilder})
       : assert(itemCount >= minCount),
+        assert(itemConfig != null),
         super(key: key);
 
   @override
   _Gallery3DState createState() => _Gallery3DState();
 }
 
-class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
+class _Gallery3DState extends State<Gallery3D>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   // var scale = 1.0;
 
   List<Widget> imageWidgetList = [];
@@ -44,19 +46,27 @@ class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
   double perimeter = 0;
   Timer timer;
 
-  Map<int, GlobalKey<_GalleryImageViewState>> globalKeyMap =
-      Map<int, GlobalKey<_GalleryImageViewState>>();
+  Map<int, GlobalKey<_GalleryItemState>> globalKeyMap =
+      Map<int, GlobalKey<_GalleryItemState>>();
 
   ///当前索引
   int currentIndex = -1;
+  //生命周期状态,
+  AppLifecycleState appLifecycleState = AppLifecycleState.resumed;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    appLifecycleState = state;
+    super.didChangeAppLifecycleState(state);
+  }
 
   @override
   void initState() {
-    _onFocusImageChanged(0, 1, false);
+    _onFocusImageChanged(widget.currentIndex, 1, false);
     if (widget.autoLoop) {
-      perimeter = calculatePerimeter(widget.itemWidth * 0.8, 50);
+      perimeter = calculatePerimeter(widget.itemConfig.itemWidth * 0.8, 50);
       Timer.periodic(Duration(milliseconds: widget.delayTime), (timer) {
         this.timer = timer;
+        if (appLifecycleState != AppLifecycleState.resumed) return;
         if (DateTime.now().millisecondsSinceEpoch - lastTouchMillisecond < 5000)
           return;
         if (onTouching) return;
@@ -80,12 +90,15 @@ class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
         _timerAnimationController.forward();
       });
     }
+    WidgetsBinding.instance.addObserver(this);
 
     super.initState();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+
     if (this.timer != null) {
       this.timer.cancel();
     }
@@ -105,7 +118,7 @@ class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: widget.itemHeight,
+      height: widget.itemConfig.itemHeight,
       width: MediaQuery.of(context).size.width,
       child: GestureDetector(
         //按下
@@ -189,6 +202,9 @@ class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
   ///焦点图片改变的时候更新图片的在Stack中的顺序
   void _onFocusImageChanged(int index, int direction, bool refresh) {
     if (currentIndex == index) return;
+    if (refresh) {
+      widget.onItemChanged(index);
+    }
     double angle = 360 / widget.itemCount;
     currentIndex = index;
     var preIndex = getPreIndex(currentIndex);
@@ -202,7 +218,8 @@ class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
         forIndex = widget.itemCount + forIndex;
       }
       if (forIndex != nextIndex && forIndex != preIndex) {
-        widgetList.add(_buildImage(forIndex, false, 180 + angle * i, angle));
+        widgetList
+            .add(_buildGalleryItem(forIndex, false, 180 + angle * i, angle));
       }
 
       forIndex--;
@@ -212,27 +229,35 @@ class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
     if (refresh) {
       if (direction > 0) {
         if (globalKeyMap[currentIndex].currentState.angle < 180) {
-          widgetList.add(_buildImage(nextIndex, false, 180 - angle, angle));
-          widgetList.add(_buildImage(preIndex, false, angle - 180, angle));
+          widgetList
+              .add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
+          widgetList
+              .add(_buildGalleryItem(preIndex, false, angle - 180, angle));
         } else {
-          widgetList.add(_buildImage(preIndex, false, angle - 180, angle));
-          widgetList.add(_buildImage(nextIndex, false, 180 - angle, angle));
+          widgetList
+              .add(_buildGalleryItem(preIndex, false, angle - 180, angle));
+          widgetList
+              .add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
         }
       } else {
         if (globalKeyMap[currentIndex].currentState.angle < 180) {
-          widgetList.add(_buildImage(nextIndex, false, 180 - angle, angle));
-          widgetList.add(_buildImage(preIndex, false, angle - 180, angle));
+          widgetList
+              .add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
+          widgetList
+              .add(_buildGalleryItem(preIndex, false, angle - 180, angle));
         } else {
-          widgetList.add(_buildImage(preIndex, false, angle - 180, angle));
-          widgetList.add(_buildImage(nextIndex, false, 180 - angle, angle));
+          widgetList
+              .add(_buildGalleryItem(preIndex, false, angle - 180, angle));
+          widgetList
+              .add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
         }
       }
     } else {
-      widgetList.add(_buildImage(preIndex, false, angle - 180, angle));
-      widgetList.add(_buildImage(nextIndex, false, 180 - angle, angle));
+      widgetList.add(_buildGalleryItem(preIndex, false, angle - 180, angle));
+      widgetList.add(_buildGalleryItem(nextIndex, false, 180 - angle, angle));
     }
 
-    widgetList.add(_buildImage(currentIndex, false, 180, angle));
+    widgetList.add(_buildGalleryItem(currentIndex, false, 180, angle));
 
     imageWidgetList = widgetList;
 
@@ -241,17 +266,16 @@ class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
     }
   }
 
-  Widget _buildImage(int index, bool isFocus, double angle, double unitAngle) {
+  Widget _buildGalleryItem(
+      int index, bool isFocus, double angle, double unitAngle) {
     if (globalKeyMap[index] == null) {
       globalKeyMap[index] = GlobalKey();
     }
-    return GalleryImageView(
+    return GalleryItem(
       key: globalKeyMap[index],
       index: index,
-      width: widget.itemWidth,
-      height: widget.itemHeight,
       builer: widget.itemBuilder,
-      radius: widget.itemRadius,
+      config: widget.itemConfig,
       onFocusImageChanged: (index, direction) =>
           _onFocusImageChanged(index, direction, true),
       onClick: (index) {
@@ -265,35 +289,31 @@ class _Gallery3DState extends State<Gallery3D> with TickerProviderStateMixin {
   }
 }
 
-class GalleryImageView extends StatefulWidget {
-  final double width;
-  final double height;
+class GalleryItem extends StatefulWidget {
+  final GalleryItemConfig config;
   final double unitAngle;
   final int index;
   final IndexedWidgetBuilder builer;
   final Function(int) onClick;
-  final double radius;
 
   final void Function(int, int) onFocusImageChanged;
   final double angle;
-  GalleryImageView(
+  GalleryItem(
       {Key key,
       this.index,
-      this.width = 200,
-      this.height = 200,
       this.unitAngle,
       this.onClick,
-      this.radius,
+      @required this.config,
       @required this.builer,
       this.onFocusImageChanged,
       this.angle})
       : super(key: key);
 
   @override
-  _GalleryImageViewState createState() => _GalleryImageViewState();
+  _GalleryItemState createState() => _GalleryItemState();
 }
 
-class _GalleryImageViewState extends State<GalleryImageView> {
+class _GalleryItemState extends State<GalleryItem> {
   double offsetDx = 0;
   double scale = 1;
   double angle = 0;
@@ -340,7 +360,7 @@ class _GalleryImageViewState extends State<GalleryImageView> {
 
     double angleOuter = (2 * pi / 360) * angle;
     double x = radiusOuterX * sin(angleOuter);
-    return x + (screenWidth - widget.width) / 2;
+    return x + (screenWidth - widget.config.itemWidth) / 2;
   }
 
   double perimeter = 0;
@@ -350,7 +370,7 @@ class _GalleryImageViewState extends State<GalleryImageView> {
     if (offset.dx == 0) return;
     // 需要计算出当前位移对应的夹角,再进行计算对应的x轴坐标点
     if (perimeter == 0) {
-      perimeter = calculatePerimeter(widget.width * 0.8, 50);
+      perimeter = calculatePerimeter(widget.config.itemWidth * 0.8, 50);
     }
 
     double offsetAngle = offset.dx.abs() / perimeter * 360;
@@ -371,38 +391,74 @@ class _GalleryImageViewState extends State<GalleryImageView> {
     setState(() {});
   }
 
+  Widget _buildItem() {
+    return Container(
+        width: widget.config.itemWidth,
+        height: widget.config.itemHeight,
+        child: widget.builer(context, widget.index));
+  }
+
+  Widget _buildMaskTransformItem(Widget child) {
+    if (!widget.config.isShowItemTransformMask) return child;
+    return Stack(children: [
+      child,
+      Container(
+        width: widget.config.itemWidth,
+        height: widget.config.itemHeight,
+        color: Color.fromARGB(100 * (1 - scale) ~/ (1 - minScale), 0, 0, 0),
+      )
+    ]);
+  }
+
+  Widget _buildRadiusItem(Widget child) {
+    if (widget.config.itemRadius <= 0) return child;
+    return ClipRRect(
+        borderRadius: BorderRadius.circular(widget.config.itemRadius),
+        child: child);
+  }
+
+  Widget _buildShadowItem(Widget child) {
+    if (widget.config.itemShadows == null || widget.config.itemShadows.isEmpty)
+      return child;
+    return Container(
+        child: child,
+        decoration: BoxDecoration(boxShadow: widget.config.itemShadows));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
       offset: Offset(offsetDx ?? 0, 0),
       child: Container(
-        width: widget.width,
-        height: widget.height,
+        width: widget.config.itemWidth,
+        height: widget.config.itemHeight,
         child: Transform.scale(
           scale: scale,
           child: InkWell(
-              onTap: () => widget.onClick(widget.index),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(widget.radius),
-                child: Stack(
-                  children: [
-                    Container(
-                        width: widget.width,
-                        height: widget.height,
-                        child: widget.builer(context, widget.index)),
-                    Container(
-                      width: widget.width,
-                      height: widget.height,
-                      color: Color.fromARGB(
-                          100 * (1 - scale) ~/ (1 - minScale), 0, 0, 0),
-                    )
-                  ],
-                ),
-              )),
+            onTap: () => widget.onClick(widget.index),
+            child: _buildShadowItem(
+                _buildRadiusItem(_buildMaskTransformItem(_buildItem()))),
+          ),
         ),
       ),
     );
   }
+}
+
+///配置类
+class GalleryItemConfig {
+  final double itemWidth; //item的宽度
+  final double itemHeight; //item的高度
+  final double itemRadius; //控制item的圆角
+  final List<BoxShadow> itemShadows; //控制item的阴影
+  final bool isShowItemTransformMask; //是否显示item的透明度蒙层的渐变
+
+  const GalleryItemConfig(
+      {this.itemWidth = 220,
+      this.itemHeight = 300,
+      this.itemRadius = 0,
+      this.isShowItemTransformMask = true,
+      this.itemShadows});
 }
 
 ///计算椭圆周长
