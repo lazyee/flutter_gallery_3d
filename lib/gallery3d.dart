@@ -64,8 +64,9 @@ class _Gallery3DState extends State<Gallery3D>
     _onFocusImageChanged(widget.currentIndex, 1, false);
     if (widget.autoLoop) {
       perimeter = calculatePerimeter(widget.itemConfig.itemWidth * 0.8, 50);
-      Timer.periodic(Duration(milliseconds: widget.delayTime), (timer) {
-        this.timer = timer;
+      this.timer =
+          Timer.periodic(Duration(milliseconds: widget.delayTime), (timer) {
+        if (!mounted) return;
         if (appLifecycleState != AppLifecycleState.resumed) return;
         if (DateTime.now().millisecondsSinceEpoch - lastTouchMillisecond < 5000)
           return;
@@ -102,12 +103,10 @@ class _Gallery3DState extends State<Gallery3D>
     if (this.timer != null) {
       this.timer.cancel();
     }
-    if (_timerAnimationController != null &&
-        _timerAnimationController.isAnimating) {
+    if (_timerAnimationController != null) {
       _timerAnimationController.stop(canceled: true);
     }
-    if (_autoScrollAnimationController != null &&
-        _autoScrollAnimationController.isAnimating) {
+    if (_autoScrollAnimationController != null) {
       _autoScrollAnimationController.stop(canceled: true);
     }
     super.dispose();
