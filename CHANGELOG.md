@@ -5,3 +5,5 @@ fixed some bug
 
 ## [0.0.3] - TODO: 20210409
 fixed some bug
+## [0.0.4] - TODO: 20210409
+fixed some bug

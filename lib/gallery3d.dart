@@ -131,6 +131,7 @@ class _Gallery3DState extends State<Gallery3D>
           onPanDownIndex = currentIndex;
           onTouching = true;
           panDownLocation = details.localPosition;
+          lastUpdateLocation = details.localPosition;
           lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
         },
         //抬起
@@ -159,6 +160,7 @@ class _Gallery3DState extends State<Gallery3D>
 
   //自动滚动,在手指抬起或者cancel回调的时候调用
   void _autoScrolling() {
+    if (lastUpdateLocation == null) return;
     var angle = globalKeyMap[currentIndex].currentState.angle;
     _autoScrollAnimationController =
         AnimationController(duration: Duration(milliseconds: 200), vsync: this);
