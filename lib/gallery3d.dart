@@ -13,22 +13,22 @@ class Gallery3D extends StatefulWidget {
   final int scrollTime;
   final int currentIndex;
   final IndexedWidgetBuilder itemBuilder;
-  final Function(int) onItemChanged;
-  final Function(int) onClickItem;
+  // final Function(int) onItemChanged;
+  final ValueChanged<int>? onItemChanged;
+  final ValueChanged<int>? onClickItem;
 
   Gallery3D(
-      {Key key,
+      {Key? key,
       this.autoLoop = true,
       this.delayTime = 5000,
       this.scrollTime = 800,
       this.currentIndex = 0,
       this.onClickItem,
       this.onItemChanged,
-      @required this.itemConfig,
-      @required this.itemCount,
-      @required this.itemBuilder})
+      required this.itemConfig,
+      required this.itemCount,
+      required this.itemBuilder})
       : assert(itemCount >= minCount),
-        assert(itemConfig != null),
         super(key: key);
 
   @override
@@ -38,11 +38,11 @@ class Gallery3D extends StatefulWidget {
 class _Gallery3DState extends State<Gallery3D>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   List<Widget> imageWidgetList = [];
-  AnimationController _timerAnimationController;
-  Animation _timerAnimation;
-  AnimationController _autoScrollAnimationController;
+  AnimationController? _timerAnimationController;
+  Animation? _timerAnimation;
+  AnimationController? _autoScrollAnimationController;
   double perimeter = 0;
-  Timer timer;
+  Timer? timer;
 
   Map<int, GlobalKey<_GalleryItemState>> globalKeyMap =
       Map<int, GlobalKey<_GalleryItemState>>();
@@ -80,49 +80,50 @@ class _Gallery3DState extends State<Gallery3D>
         _timerAnimation = Tween(
           begin: 0.0,
           end: (-perimeter / widget.itemCount).toDouble(),
-        ).animate(_timerAnimationController);
+        ).animate(_timerAnimationController!);
 
         double last = 0;
-        _timerAnimation.addListener(() {
+        _timerAnimation?.addListener(() {
           if (onTouching) return;
-          var offsetX = _timerAnimation.value - last;
+          var offsetX = _timerAnimation?.value - last;
           globalKeyMap.forEach((key, value) {
-            value.currentState.updateTransform(Offset(offsetX, 0));
+            value.currentState?.updateTransform(Offset(offsetX, 0));
           });
-          last = _timerAnimation.value;
+          last = _timerAnimation?.value;
         });
-        _timerAnimationController.forward();
+        _timerAnimationController?.forward();
       });
     }
-    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance?.addObserver(this);
 
     super.initState();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance?.removeObserver(this);
 
     if (this.timer != null) {
-      this.timer.cancel();
+      this.timer?.cancel();
     }
     if (_timerAnimationController != null) {
-      _timerAnimationController.stop(canceled: true);
+      _timerAnimationController?.stop(canceled: true);
     }
     if (_autoScrollAnimationController != null) {
-      _autoScrollAnimationController.stop(canceled: true);
+      _autoScrollAnimationController?.stop(canceled: true);
     }
     super.dispose();
   }
 
   var onTouching = false;
   var lastTouchMillisecond = 0;
-  Offset panDownLocation;
-  Offset lastUpdateLocation;
+  Offset? panDownLocation;
+  Offset? lastUpdateLocation;
   int onPanDownIndex = -1; //在手指按下的时候的index
   @override
   Widget build(BuildContext context) {
     return Container(
+      // color: Colors.red,
       height: widget.itemConfig.itemHeight,
       width: MediaQuery.of(context).size.width,
       child: GestureDetector(
@@ -148,12 +149,13 @@ class _Gallery3DState extends State<Gallery3D>
           lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
           var dx = details.delta.dx;
           globalKeyMap.forEach((key, value) {
-            value.currentState.updateTransform(Offset(dx, 0));
+            value.currentState?.updateTransform(Offset(dx, 0));
           });
         },
-        child: Stack(
+        child: ClipRect(
+            child: Stack(
           children: imageWidgetList,
-        ),
+        )),
       ),
     );
   }
@@ -161,13 +163,13 @@ class _Gallery3DState extends State<Gallery3D>
   //自动滚动,在手指抬起或者cancel回调的时候调用
   void _autoScrolling() {
     if (lastUpdateLocation == null) return;
-    var angle = globalKeyMap[currentIndex].currentState.angle;
+    double angle = globalKeyMap[currentIndex]?.currentState?.angle ?? 0;
     _autoScrollAnimationController =
         AnimationController(duration: Duration(milliseconds: 200), vsync: this);
     Animation animation;
     double target = 0;
 
-    var offsetX = lastUpdateLocation.dx - panDownLocation.dx;
+    var offsetX = lastUpdateLocation!.dx - panDownLocation!.dx;
     //当偏移量超过屏幕的10%宽度的时候且手指按下时候的索引和手指抬起来时候的索引一样的时候
     if (onPanDownIndex == currentIndex &&
         offsetX.abs() > MediaQuery.of(context).size.width * 0.1) {
@@ -186,19 +188,20 @@ class _Gallery3DState extends State<Gallery3D>
 
     if (target == 0) return;
     animation =
-        Tween(begin: 0.0, end: target).animate(_autoScrollAnimationController);
+        Tween(begin: 0.0, end: target).animate(_autoScrollAnimationController!);
 
     double lastValue = 0;
     animation.addListener(() {
       var offsetX = animation.value - lastValue;
       globalKeyMap.forEach((key, value) {
-        value.currentState.updateTransform(Offset(offsetX, 0));
+        value.currentState?.updateTransform(Offset(offsetX, 0));
       });
       lastValue = animation.value;
     });
-    _autoScrollAnimationController.forward();
-    _autoScrollAnimationController.addListener(() {
-      if (_autoScrollAnimationController.isCompleted) {
+    _autoScrollAnimationController?.forward();
+    _autoScrollAnimationController?.addListener(() {
+      if (_autoScrollAnimationController != null &&
+          _autoScrollAnimationController!.isCompleted) {
         onTouching = false;
       }
     });
@@ -226,7 +229,7 @@ class _Gallery3DState extends State<Gallery3D>
   void _onFocusImageChanged(int index, int direction, bool refresh) {
     // if (currentIndex == index) return;
     if (refresh) {
-      widget.onItemChanged(index);
+      widget.onItemChanged?.call(index);
     }
 
     currentIndex = index;
@@ -251,7 +254,7 @@ class _Gallery3DState extends State<Gallery3D>
     //处理前一个和后一个Item在Stack中的层级
     if (refresh) {
       if (direction > 0) {
-        if (globalKeyMap[currentIndex].currentState.angle < 180) {
+        if ((globalKeyMap[currentIndex]?.currentState?.angle ?? 0) < 180) {
           widgetList.add(
               _buildGalleryItem(nextIndex, false, 180 - unitAngle, unitAngle));
           widgetList.add(
@@ -263,7 +266,7 @@ class _Gallery3DState extends State<Gallery3D>
               _buildGalleryItem(nextIndex, false, 180 - unitAngle, unitAngle));
         }
       } else {
-        if (globalKeyMap[currentIndex].currentState.angle < 180) {
+        if ((globalKeyMap[currentIndex]?.currentState?.angle ?? 0) < 180) {
           widgetList.add(
               _buildGalleryItem(nextIndex, false, 180 - unitAngle, unitAngle));
           widgetList.add(
@@ -305,7 +308,7 @@ class _Gallery3DState extends State<Gallery3D>
           _onFocusImageChanged(index, direction, true),
       onClick: (index) {
         if (widget.onClickItem != null && index == currentIndex) {
-          widget.onClickItem(index);
+          widget.onClickItem?.call(index);
         }
       },
       angle: angle,
@@ -319,20 +322,20 @@ class GalleryItem extends StatefulWidget {
   final double unitAngle;
   final int index;
   final IndexedWidgetBuilder builer;
-  final Function(int) onClick;
+  final ValueChanged<int>? onClick;
 
-  final void Function(int, int) onFocusImageChanged;
+  final void Function(int, int)? onFocusImageChanged;
   final double angle;
-  GalleryItem(
-      {Key key,
-      this.index,
-      this.unitAngle,
-      this.onClick,
-      @required this.config,
-      @required this.builer,
-      this.onFocusImageChanged,
-      this.angle})
-      : super(key: key);
+  GalleryItem({
+    Key? key,
+    required this.index,
+    required this.unitAngle,
+    required this.angle,
+    this.onClick,
+    required this.config,
+    required this.builer,
+    this.onFocusImageChanged,
+  }) : super(key: key);
 
   @override
   _GalleryItemState createState() => _GalleryItemState();
@@ -408,7 +411,7 @@ class _GalleryItemState extends State<GalleryItem> {
 
     if (angle > 180 - widget.unitAngle / 2 &&
         angle < 180 + widget.unitAngle / 2) {
-      widget.onFocusImageChanged(widget.index, offset.dx > 0 ? 1 : -1);
+      widget.onFocusImageChanged?.call(widget.index, offset.dx > 0 ? 1 : -1);
     }
 
     this.offsetDx = calculateX(angle);
@@ -443,8 +446,7 @@ class _GalleryItemState extends State<GalleryItem> {
   }
 
   Widget _buildShadowItem(Widget child) {
-    if (widget.config.itemShadows == null || widget.config.itemShadows.isEmpty)
-      return child;
+    if (widget.config.itemShadows.isEmpty) return child;
     return Container(
         child: child,
         decoration: BoxDecoration(boxShadow: widget.config.itemShadows));
@@ -453,14 +455,14 @@ class _GalleryItemState extends State<GalleryItem> {
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
-      offset: Offset(offsetDx ?? 0, 0),
+      offset: Offset(offsetDx, 0),
       child: Container(
         width: widget.config.itemWidth,
         height: widget.config.itemHeight,
         child: Transform.scale(
           scale: scale,
           child: InkWell(
-            onTap: () => widget.onClick(widget.index),
+            onTap: () => widget.onClick?.call(widget.index),
             child: _buildShadowItem(
                 _buildRadiusItem(_buildMaskTransformItem(_buildItem()))),
           ),
@@ -483,7 +485,7 @@ class GalleryItemConfig {
       this.itemHeight = 300,
       this.itemRadius = 0,
       this.isShowItemTransformMask = true,
-      this.itemShadows});
+      this.itemShadows = const []});
 }
 
 ///计算椭圆周长

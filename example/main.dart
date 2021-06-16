@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({Key? key, required this.title}) : super(key: key);
   final String title;
 
   @override
@@ -32,11 +32,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   var imageUrlList = [
-    "https://i0.hdslb.com/bfs/manga-static/baba5ef995c6551ff44f693b80485d0027281378.jpg@360w_480h.jpg",
-    "https://i0.hdslb.com/bfs/manga-static/67ffb14f8420461aa7a61ef571f3281b228aa7d1.jpg@360w_480h.jpg",
-    "https://i0.hdslb.com/bfs/manga-static/214b88f3089e66053b60dc977b44eef9ff5c462c.jpg@360w_480h.jpg",
-    "https://i0.hdslb.com/bfs/manga-static/b03a8ca193bdb734266a0312b6d76df641b9dbcc.jpg@360w_480h.jpg",
-    "https://i0.hdslb.com/bfs/manga-static/9731396b6816ab16a1ae419e59a6826335212dc0.jpg@360w_480h.jpg",
+    "https://i0.hdslb.com/bfs/manga-static/42b2143b5694835ae35763bea634cdfc36392801.jpg@300w.jpg",
+    "https://i0.hdslb.com/bfs/manga-static/87e22d652eb4c456fe251e15b57bbb25da39925a.jpg@300w.jpg",
+    "https://i0.hdslb.com/bfs/manga-static/3f01609c36d4816eb227c95ac31471710fa706e6.jpg@300w.jpg",
+    "https://i0.hdslb.com/bfs/manga-static/6b5ab1a7cb883504db182ee46381835e70d6d460.jpg@300w.jpg",
+    "https://i0.hdslb.com/bfs/manga-static/5482454680757477d728dae82f80a280a9cc97a2.jpg@300w.jpg",
   ];
 
   int currentIndex = 0;
@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         onItemChanged: (index) {
           this.currentIndex = index;
           _backgroundBlurViewKey.currentState
-              .updateImageUrl(imageUrlList[index]);
+              ?.updateImageUrl(imageUrlList[index]);
         },
         onClickItem: (index) => print("currentIndex:$index"),
         itemBuilder: (context, index) {
@@ -101,14 +101,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
 class BackgrounBlurView extends StatefulWidget {
   final String imageUrl;
-  BackgrounBlurView({Key key, this.imageUrl}) : super(key: key);
+  BackgrounBlurView({Key? key, required this.imageUrl}) : super(key: key);
 
   @override
   _BackgrounBlurViewState createState() => _BackgrounBlurViewState();
 }
 
 class _BackgrounBlurViewState extends State<BackgrounBlurView> {
-  String imageUrl;
+  String? imageUrl;
 
   @override
   void initState() {
@@ -129,7 +129,7 @@ class _BackgrounBlurViewState extends State<BackgrounBlurView> {
         height: 200,
         width: MediaQuery.of(context).size.width,
         child: Image.network(
-          imageUrl,
+          imageUrl ?? '',
           fit: BoxFit.cover,
         ),
       ),
