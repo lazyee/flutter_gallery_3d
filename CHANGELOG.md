@@ -21,3 +21,5 @@ fixed some bug
 ## [1.0.0] - 20210616
 
 Migrate to null safety.
+## [1.0.1] - 20211102
+支持Y轴的偏移

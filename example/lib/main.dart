@@ -37,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     "https://i0.hdslb.com/bfs/manga-static/3f01609c36d4816eb227c95ac31471710fa706e6.jpg@300w.jpg",
     "https://i0.hdslb.com/bfs/manga-static/6b5ab1a7cb883504db182ee46381835e70d6d460.jpg@300w.jpg",
     "https://i0.hdslb.com/bfs/manga-static/5482454680757477d728dae82f80a280a9cc97a2.jpg@300w.jpg",
+    // "https://i0.hdslb.com/bfs/manga-static/5482454680757477d728dae82f80a280a9cc97a2.jpg@300w.jpg",
   ];
 
   int currentIndex = 0;
@@ -44,15 +45,19 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   Widget buildGallery3D() {
     return Gallery3D(
         itemCount: imageUrlList.length,
+        height: 300,
+        isClip: false,
+        ellipseHeight: 80,
         itemConfig: GalleryItemConfig(
-            itemWidth: 220,
-            itemHeight: 300,
-            itemRadius: 5,
-            isShowItemTransformMask: true,
-            itemShadows: [
-              BoxShadow(
-                  color: Color(0x90000000), offset: Offset(2, 0), blurRadius: 5)
-            ]),
+          itemWidth: 150,
+          itemHeight: 150,
+          itemRadius: 300,
+          isShowItemTransformMask: false,
+          // itemShadows: [
+          //   BoxShadow(
+          //       color: Color(0x90000000), offset: Offset(2, 0), blurRadius: 5)
+          // ]
+        ),
         currentIndex: currentIndex,
         onItemChanged: (index) {
           this.currentIndex = index;
@@ -87,6 +92,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   key: _backgroundBlurViewKey,
                 ),
                 Container(
+                  padding: EdgeInsets.only(top: 100),
                   child: buildGallery3D(),
                   margin: EdgeInsets.fromLTRB(0, 50, 0, 50),
                 ),

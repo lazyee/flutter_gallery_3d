@@ -8,14 +8,16 @@ int minCount = 3;
 class Gallery3D extends StatefulWidget {
   final int itemCount;
   final GalleryItemConfig itemConfig;
+  final double? height;
   final bool autoLoop;
   final int delayTime;
   final int scrollTime;
   final int currentIndex;
   final IndexedWidgetBuilder itemBuilder;
-  // final Function(int) onItemChanged;
   final ValueChanged<int>? onItemChanged;
   final ValueChanged<int>? onClickItem;
+  final double ellipseHeight; //椭圆轨迹高度
+  final bool isClip;
 
   Gallery3D(
       {Key? key,
@@ -25,6 +27,9 @@ class Gallery3D extends StatefulWidget {
       this.currentIndex = 0,
       this.onClickItem,
       this.onItemChanged,
+      this.ellipseHeight = 0,
+      this.isClip = true,
+      this.height,
       required this.itemConfig,
       required this.itemCount,
       required this.itemBuilder})
@@ -85,9 +90,9 @@ class _Gallery3DState extends State<Gallery3D>
         double last = 0;
         _timerAnimation?.addListener(() {
           if (onTouching) return;
-          var offsetX = _timerAnimation?.value - last;
+          var offsetDx = _timerAnimation?.value - last;
           globalKeyMap.forEach((key, value) {
-            value.currentState?.updateTransform(Offset(offsetX, 0));
+            value.currentState?.updateTransform(offsetDx);
           });
           last = _timerAnimation?.value;
         });
@@ -124,8 +129,10 @@ class _Gallery3DState extends State<Gallery3D>
   Widget build(BuildContext context) {
     return Container(
       // color: Colors.red,
-      height: widget.itemConfig.itemHeight,
       width: MediaQuery.of(context).size.width,
+      height: widget.height ?? widget.itemConfig.itemHeight,
+      padding: EdgeInsets.fromLTRB(
+          0, widget.ellipseHeight / 2, 0, widget.ellipseHeight / 2),
       child: GestureDetector(
         //按下
         onPanDown: (details) {
@@ -149,14 +156,23 @@ class _Gallery3DState extends State<Gallery3D>
           lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
           var dx = details.delta.dx;
           globalKeyMap.forEach((key, value) {
-            value.currentState?.updateTransform(Offset(dx, 0));
+            value.currentState?.updateTransform(dx);
           });
         },
-        child: ClipRect(
-            child: Stack(
-          children: imageWidgetList,
-        )),
+        child: _buildImageWidgetList(),
       ),
+    );
+  }
+
+  Widget _buildImageWidgetList() {
+    if (widget.isClip) {
+      return ClipRect(
+          child: Stack(
+        children: imageWidgetList,
+      ));
+    }
+    return Stack(
+      children: imageWidgetList,
     );
   }
 
@@ -192,9 +208,9 @@ class _Gallery3DState extends State<Gallery3D>
 
     double lastValue = 0;
     animation.addListener(() {
-      var offsetX = animation.value - lastValue;
+      var offsetDx = animation.value - lastValue;
       globalKeyMap.forEach((key, value) {
-        value.currentState?.updateTransform(Offset(offsetX, 0));
+        value.currentState?.updateTransform(offsetDx);
       });
       lastValue = animation.value;
     });
@@ -302,6 +318,7 @@ class _Gallery3DState extends State<Gallery3D>
     return GalleryItem(
       key: globalKeyMap[index],
       index: index,
+      ellipseHeight: widget.ellipseHeight,
       builer: widget.itemBuilder,
       config: widget.itemConfig,
       onFocusImageChanged: (index, direction) =>
@@ -320,6 +337,7 @@ class _Gallery3DState extends State<Gallery3D>
 class GalleryItem extends StatefulWidget {
   final GalleryItemConfig config;
   final double unitAngle;
+  final double ellipseHeight;
   final int index;
   final IndexedWidgetBuilder builer;
   final ValueChanged<int>? onClick;
@@ -332,6 +350,7 @@ class GalleryItem extends StatefulWidget {
     required this.unitAngle,
     required this.angle,
     this.onClick,
+    this.ellipseHeight = 0,
     required this.config,
     required this.builer,
     this.onFocusImageChanged,
@@ -342,7 +361,7 @@ class GalleryItem extends StatefulWidget {
 }
 
 class _GalleryItemState extends State<GalleryItem> {
-  double offsetDx = 0;
+  Offset offset = Offset.zero;
   double scale = 1;
   double angle = 0;
 
@@ -352,7 +371,8 @@ class _GalleryItemState extends State<GalleryItem> {
     angle = getFinalAngle(widget.angle.toDouble());
     Future.delayed(Duration(seconds: 0), () {
       setState(() {
-        this.offsetDx = calculateX(angle);
+        // this.offsetDx = calculateX(angle);
+        this.offset = calculateOffset(angle);
         calculateScale();
       });
     });
@@ -374,35 +394,36 @@ class _GalleryItemState extends State<GalleryItem> {
 
   ///计算缩放参数
   void calculateScale() {
-    // print("angle:$angle");
     var tempScale = angle / 180.0;
     tempScale = 1 - (1 - tempScale) * 0.4;
     this.scale = getFinalScale(tempScale);
   }
 
-  ///计算椭圆轨X轴的点
-  double calculateX(double angle) {
+  //计算椭圆轨迹的点
+  Offset calculateOffset(double angle) {
     double screenWidth = MediaQuery.of(context).size.width;
     double width = screenWidth * 0.7; //椭圆宽
     double radiusOuterX = width / 2;
+    double radiusOuterY = widget.ellipseHeight;
 
     double angleOuter = (2 * pi / 360) * angle;
     double x = radiusOuterX * sin(angleOuter);
-    return x + (screenWidth - widget.config.itemWidth) / 2;
+    double y = radiusOuterY > 0 ? radiusOuterY * cos(angleOuter) : 0;
+    return Offset(x + (screenWidth - widget.config.itemWidth) / 2, -y);
   }
 
   double perimeter = 0;
 
   ///更新偏移数据
-  void updateTransform(Offset offset) {
-    if (offset.dx == 0) return;
+  void updateTransform(double offsetDx) {
+    if (offsetDx == 0) return;
     // 需要计算出当前位移对应的夹角,再进行计算对应的x轴坐标点
     if (perimeter == 0) {
       perimeter = calculatePerimeter(widget.config.itemWidth * 0.8, 50);
     }
 
-    double offsetAngle = offset.dx.abs() / perimeter * 360;
-    if (offset.dx > 0) {
+    double offsetAngle = offsetDx.abs() / perimeter * 360;
+    if (offsetDx > 0) {
       angle -= offsetAngle;
     } else {
       angle += offsetAngle;
@@ -411,10 +432,10 @@ class _GalleryItemState extends State<GalleryItem> {
 
     if (angle > 180 - widget.unitAngle / 2 &&
         angle < 180 + widget.unitAngle / 2) {
-      widget.onFocusImageChanged?.call(widget.index, offset.dx > 0 ? 1 : -1);
+      widget.onFocusImageChanged?.call(widget.index, offsetDx > 0 ? 1 : -1);
     }
 
-    this.offsetDx = calculateX(angle);
+    this.offset = calculateOffset(angle);
     calculateScale();
     setState(() {});
   }
@@ -455,13 +476,16 @@ class _GalleryItemState extends State<GalleryItem> {
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
-      offset: Offset(offsetDx, 0),
+      offset: offset,
+      // offset: Offset(offsetDx, 0),
       child: Container(
         width: widget.config.itemWidth,
         height: widget.config.itemHeight,
         child: Transform.scale(
           scale: scale,
           child: InkWell(
+            highlightColor: Colors.transparent,
+            splashColor: Colors.transparent,
             onTap: () => widget.onClick?.call(widget.index),
             child: _buildShadowItem(
                 _buildRadiusItem(_buildMaskTransformItem(_buildItem()))),
