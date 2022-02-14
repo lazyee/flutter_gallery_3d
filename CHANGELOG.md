@@ -23,3 +23,5 @@ fixed some bug
 Migrate to null safety.
 ## [1.0.1] - 20211102
 支持Y轴的偏移
+## [1.0.2] - 20220215
+remove all GlobalKey

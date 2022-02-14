@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_gallery_3d/gallery3d.dart';
 
 void main() {
@@ -37,7 +36,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     "https://i0.hdslb.com/bfs/manga-static/3f01609c36d4816eb227c95ac31471710fa706e6.jpg@300w.jpg",
     "https://i0.hdslb.com/bfs/manga-static/6b5ab1a7cb883504db182ee46381835e70d6d460.jpg@300w.jpg",
     "https://i0.hdslb.com/bfs/manga-static/5482454680757477d728dae82f80a280a9cc97a2.jpg@300w.jpg",
-    // "https://i0.hdslb.com/bfs/manga-static/5482454680757477d728dae82f80a280a9cc97a2.jpg@300w.jpg",
+    "https://i0.hdslb.com/bfs/manga-static/5482454680757477d728dae82f80a280a9cc97a2.jpg@300w.jpg",
   ];
 
   int currentIndex = 0;
@@ -45,13 +44,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   Widget buildGallery3D() {
     return Gallery3D(
         itemCount: imageUrlList.length,
+        width: MediaQuery.of(context).size.width,
         height: 300,
         isClip: false,
-        ellipseHeight: 80,
+        // ellipseHeight: 80,
         itemConfig: GalleryItemConfig(
-          itemWidth: 150,
-          itemHeight: 150,
-          itemRadius: 300,
+          itemWidth: 220,
+          itemHeight: 300,
+          itemRadius: 10,
           isShowItemTransformMask: false,
           // itemShadows: [
           //   BoxShadow(
@@ -60,9 +60,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         ),
         currentIndex: currentIndex,
         onItemChanged: (index) {
-          this.currentIndex = index;
-          _backgroundBlurViewKey.currentState
-              ?.updateImageUrl(imageUrlList[index]);
+          setState(() {
+            this.currentIndex = index;
+          });
         },
         onClickItem: (index) => print("currentIndex:$index"),
         itemBuilder: (context, index) {
@@ -72,9 +72,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           );
         });
   }
-
-  GlobalKey<_BackgrounBlurViewState> _backgroundBlurViewKey =
-      GlobalKey<_BackgrounBlurViewState>();
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +86,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               children: [
                 BackgrounBlurView(
                   imageUrl: imageUrlList[currentIndex],
-                  key: _backgroundBlurViewKey,
                 ),
                 Container(
                   padding: EdgeInsets.only(top: 100),
@@ -105,28 +101,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 }
 
-class BackgrounBlurView extends StatefulWidget {
+class BackgrounBlurView extends StatelessWidget {
   final String imageUrl;
   BackgrounBlurView({Key? key, required this.imageUrl}) : super(key: key);
-
-  @override
-  _BackgrounBlurViewState createState() => _BackgrounBlurViewState();
-}
-
-class _BackgrounBlurViewState extends State<BackgrounBlurView> {
-  String? imageUrl;
-
-  @override
-  void initState() {
-    imageUrl = widget.imageUrl;
-    super.initState();
-  }
-
-  void updateImageUrl(String url) {
-    this.setState(() {
-      imageUrl = url;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +112,7 @@ class _BackgrounBlurViewState extends State<BackgrounBlurView> {
         height: 200,
         width: MediaQuery.of(context).size.width,
         child: Image.network(
-          imageUrl ?? '',
+          imageUrl,
           fit: BoxFit.cover,
         ),
       ),
