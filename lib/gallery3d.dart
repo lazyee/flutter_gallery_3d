@@ -46,15 +46,12 @@ class _Gallery3DState extends State<Gallery3D>
   AnimationController? _timerAnimationController;
   Animation? _timerAnimation;
   AnimationController? _autoScrollAnimationController;
-  double perimeter = 0;
-  Timer? timer;
+  double _perimeter = 0;
+  Timer? _timer;
   List<_GalleryItemTransformInfo> _galleryItemTransformInfoList = [];
-
-  ///单位角度
-  double unitAngle = 0;
-
-  // /当前索引
-  late int currentIndex = widget.currentIndex;
+  double _unitAngle = 0; //单位角度
+  late int _currentIndex = widget.currentIndex; //当前索引
+  double _minScale = 0.8; //最小缩放值
 
   ///生命周期状态,
   AppLifecycleState appLifecycleState = AppLifecycleState.resumed;
@@ -74,18 +71,18 @@ class _Gallery3DState extends State<Gallery3D>
 
   @override
   void initState() {
-    unitAngle = 360 / widget.itemCount;
+    _unitAngle = 360 / widget.itemCount;
     _initGalleryTransformInfoMap();
     _updateWidgetIndexOnStack();
     if (widget.autoLoop) {
-      perimeter = calculatePerimeter(widget.itemConfig.width * 0.8, 50);
-      this.timer =
+      _perimeter = calculatePerimeter(widget.itemConfig.width * 0.8, 50);
+      this._timer =
           Timer.periodic(Duration(milliseconds: widget.delayTime), (timer) {
         if (!mounted) return;
         if (appLifecycleState != AppLifecycleState.resumed) return;
-        if (DateTime.now().millisecondsSinceEpoch - lastTouchMillisecond <
+        if (DateTime.now().millisecondsSinceEpoch - _lastTouchMillisecond <
             widget.delayTime) return;
-        if (onTouching) return;
+        if (_isTouching) return;
 
         _timerAnimationController = AnimationController(
             duration: Duration(
@@ -94,12 +91,12 @@ class _Gallery3DState extends State<Gallery3D>
             vsync: this);
         _timerAnimation = Tween(
           begin: 0.0,
-          end: (-perimeter / widget.itemCount).toDouble(),
+          end: (-_perimeter / widget.itemCount).toDouble(),
         ).animate(_timerAnimationController!);
 
         double last = 0;
         _timerAnimation?.addListener(() {
-          if (onTouching) return;
+          if (_isTouching) return;
           setState(() {
             _updateAllGalleryItemTransform(_timerAnimation?.value - last);
             last = _timerAnimation?.value;
@@ -117,24 +114,18 @@ class _Gallery3DState extends State<Gallery3D>
   @override
   void dispose() {
     WidgetsBinding.instance?.removeObserver(this);
-
-    if (this.timer != null) {
-      this.timer?.cancel();
-    }
-    if (_timerAnimationController != null) {
-      _timerAnimationController?.stop(canceled: true);
-    }
-    if (_autoScrollAnimationController != null) {
-      _autoScrollAnimationController?.stop(canceled: true);
-    }
+    _timer?.cancel();
+    _timer = null;
+    _timerAnimationController?.stop(canceled: true);
+    _autoScrollAnimationController?.stop(canceled: true);
     super.dispose();
   }
 
-  var onTouching = false;
-  var lastTouchMillisecond = 0;
-  Offset? panDownLocation;
-  Offset? lastUpdateLocation;
-  int onPanDownIndex = -1; //在手指按下的时候的index
+  var _isTouching = false;
+  var _lastTouchMillisecond = 0;
+  Offset? _panDownLocation;
+  Offset? _lastUpdateLocation;
+  int _panDownIndex = -1; //在手指按下的时候的index
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -145,11 +136,11 @@ class _Gallery3DState extends State<Gallery3D>
       child: GestureDetector(
         //按下
         onPanDown: (details) {
-          onPanDownIndex = currentIndex;
-          onTouching = true;
-          panDownLocation = details.localPosition;
-          lastUpdateLocation = details.localPosition;
-          lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
+          _panDownIndex = _currentIndex;
+          _isTouching = true;
+          _panDownLocation = details.localPosition;
+          _lastUpdateLocation = details.localPosition;
+          _lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
         },
         //抬起
         onPanEnd: (details) {
@@ -162,8 +153,8 @@ class _Gallery3DState extends State<Gallery3D>
         //更新
         onPanUpdate: (details) {
           setState(() {
-            lastUpdateLocation = details.localPosition;
-            lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
+            _lastUpdateLocation = details.localPosition;
+            _lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
             _updateAllGalleryItemTransform(details.delta.dx);
           });
         },
@@ -177,23 +168,20 @@ class _Gallery3DState extends State<Gallery3D>
     if (scale > 1) {
       scale = 1 - scale % 1.0;
     }
-    if (scale < minScale) {
-      scale = minScale;
+    if (scale < _minScale) {
+      scale = _minScale;
     }
     return scale;
   }
 
-  //最小缩放值
-  double minScale = 0.8;
-
-  // ///计算缩放参数
+  ///计算缩放参数
   double calculateScale(int angle) {
     var tempScale = angle / 180.0;
     tempScale = 1 - (1 - tempScale) * 0.4;
     return getFinalScale(tempScale);
   }
 
-  //计算椭圆轨迹的点
+  ///计算椭圆轨迹的点
   Offset calculateOffset(int angle) {
     double width = widget.width * 0.7; //椭圆宽
     double radiusOuterX = width / 2;
@@ -229,15 +217,15 @@ class _Gallery3DState extends State<Gallery3D>
         _galleryItemTransformInfoList[index];
     // if (offsetDx == 0) return;
     // 需要计算出当前位移对应的夹角,再进行计算对应的x轴坐标点
-    if (perimeter == 0) {
-      perimeter = calculatePerimeter(widget.itemConfig.width * 0.8, 50);
+    if (_perimeter == 0) {
+      _perimeter = calculatePerimeter(widget.itemConfig.width * 0.8, 50);
     }
 
     int angle = transformInfo.angle;
     double scale = transformInfo.scale;
     Offset offset = transformInfo.offset;
 
-    int offsetAngle = (offsetDx.abs() / perimeter * 360).round();
+    int offsetAngle = (offsetDx.abs() / _perimeter * 360).round();
     if (offsetDx > 0) {
       angle -= offsetAngle;
     } else {
@@ -271,33 +259,36 @@ class _Gallery3DState extends State<Gallery3D>
 
   //自动滚动,在手指抬起或者cancel回调的时候调用
   void _autoScrolling() {
-    if (lastUpdateLocation == null) return;
-    int angle = _galleryItemTransformInfoList[currentIndex].angle;
+    if (_lastUpdateLocation == null) {
+      _isTouching = false;
+      return;
+    }
+    int angle = _galleryItemTransformInfoList[_currentIndex].angle;
 
     _autoScrollAnimationController = AnimationController(
         duration: Duration(
             milliseconds: _getAnimMilliseconds(widget.scrollTime ~/
                 widget.itemCount *
-                (angle % unitAngle) ~/
-                unitAngle)),
+                (angle % _unitAngle) ~/
+                _unitAngle)),
         vsync: this);
     Animation animation;
     double target = 0;
 
-    var offsetX = lastUpdateLocation!.dx - panDownLocation!.dx;
+    var offsetX = _lastUpdateLocation!.dx - _panDownLocation!.dx;
     //当偏移量超过屏幕的10%宽度的时候且手指按下时候的索引和手指抬起来时候的索引一样的时候
-    if (onPanDownIndex == currentIndex &&
+    if (_panDownIndex == _currentIndex &&
         offsetX.abs() > MediaQuery.of(context).size.width * 0.1) {
       if (offsetX > 0) {
-        target = (angle - 180 + unitAngle) / 360 * perimeter;
+        target = (angle - 180 + _unitAngle) / 360 * _perimeter;
       } else {
-        target = -(180 + unitAngle - angle) / 360 * perimeter;
+        target = -(180 + _unitAngle - angle) / 360 * _perimeter;
       }
     } else {
       if (angle > 180) {
-        target = (angle - 180) / 360 * perimeter;
+        target = (angle - 180) / 360 * _perimeter;
       } else {
-        target = -(180 - angle) / 360 * perimeter;
+        target = -(180 - angle) / 360 * _perimeter;
       }
     }
 
@@ -316,7 +307,7 @@ class _Gallery3DState extends State<Gallery3D>
     _autoScrollAnimationController?.addListener(() {
       if (_autoScrollAnimationController != null &&
           _autoScrollAnimationController!.isCompleted) {
-        onTouching = false;
+        _isTouching = false;
       }
     });
   }
@@ -329,12 +320,12 @@ class _Gallery3DState extends State<Gallery3D>
     for (var i = 0; i < _galleryItemTransformInfoList.length; i++) {
       var item = _galleryItemTransformInfoList[i];
 
-      if (item.angle > 180 - unitAngle / 2 &&
-          item.angle < 180 + unitAngle / 2) {
-        currentIndex = i;
+      if (item.angle > 180 - _unitAngle / 2 &&
+          item.angle < 180 + _unitAngle / 2) {
+        _currentIndex = i;
 
         Future.delayed(Duration.zero, () {
-          widget.onItemChanged?.call(currentIndex);
+          widget.onItemChanged?.call(_currentIndex);
         });
       }
       _updateWidgetIndexOnStack();
@@ -362,7 +353,7 @@ class _Gallery3DState extends State<Gallery3D>
   void _initGalleryTransformInfoMap() {
     _galleryItemTransformInfoList.clear();
     for (var i = 0; i < widget.itemCount; i++) {
-      var itemAngle = getFinalAngle(180 + unitAngle * i);
+      var itemAngle = getFinalAngle(180 + _unitAngle * i);
       _galleryItemTransformInfoList.add(_GalleryItemTransformInfo(
           index: i,
           angle: itemAngle,
@@ -382,7 +373,7 @@ class _Gallery3DState extends State<Gallery3D>
     _tempList.clear();
     for (var i = 0; i < _galleryItemTransformInfoList.length; i++) {
       var angle = _galleryItemTransformInfoList[i].angle.ceil();
-      if (angle >= 180 + unitAngle / 2) {
+      if (angle >= 180 + _unitAngle / 2) {
         _leftWidgetList.add(_buildGalleryItem(i));
       } else {
         _rightWidgetList.add(_buildGalleryItem(i));
@@ -393,7 +384,7 @@ class _Gallery3DState extends State<Gallery3D>
         widget1.transformInfo.angle.compareTo(widget2.transformInfo.angle));
 
     _rightWidgetList.forEach((element) {
-      if (element.transformInfo.angle < unitAngle / 2) {
+      if (element.transformInfo.angle < _unitAngle / 2) {
         element.transformInfo.angle += 360;
         _tempList.add(element);
       }
@@ -418,7 +409,7 @@ class _Gallery3DState extends State<Gallery3D>
       builder: widget.itemBuilder,
       config: widget.itemConfig,
       onClick: (index) {
-        if (widget.onClickItem != null && index == currentIndex) {
+        if (widget.onClickItem != null && index == _currentIndex) {
           widget.onClickItem?.call(index);
         }
       },
