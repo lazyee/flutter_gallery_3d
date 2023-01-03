@@ -1,3 +1,5 @@
+## [1.0.5] - 20230103
+Resolves widget does not scroll in pageview
 ## [1.0.4] - 20220216
 fixed some bug
 ## [1.0.3] - 20220215

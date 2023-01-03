@@ -134,30 +134,52 @@ class _Gallery3DState extends State<Gallery3D>
       padding: EdgeInsets.fromLTRB(
           0, widget.ellipseHeight / 2, 0, widget.ellipseHeight / 2),
       child: GestureDetector(
-        //按下
-        onPanDown: (details) {
+        behavior: HitTestBehavior.opaque,
+        onHorizontalDragCancel: (() {
+          _autoScrolling();
+        }),
+        onHorizontalDragDown: (details) {
           _panDownIndex = _currentIndex;
           _isTouching = true;
           _panDownLocation = details.localPosition;
           _lastUpdateLocation = details.localPosition;
           _lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
         },
-        //抬起
-        onPanEnd: (details) {
+        onHorizontalDragEnd: (details) {
           _autoScrolling();
         },
-        //结束
-        onPanCancel: () {
-          _autoScrolling();
-        },
-        //更新
-        onPanUpdate: (details) {
+        onHorizontalDragStart: (details) {},
+        onHorizontalDragUpdate: (details) {
           setState(() {
             _lastUpdateLocation = details.localPosition;
             _lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
             _updateAllGalleryItemTransform(details.delta.dx);
           });
         },
+        // //按下
+        // onPanDown: (details) {
+        //   _panDownIndex = _currentIndex;
+        //   _isTouching = true;
+        //   _panDownLocation = details.localPosition;
+        //   _lastUpdateLocation = details.localPosition;
+        //   _lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
+        // },
+        // //抬起
+        // onPanEnd: (details) {
+        //   _autoScrolling();
+        // },
+        // //结束
+        // onPanCancel: () {
+        //   _autoScrolling();
+        // },
+        // //更新
+        // onPanUpdate: (details) {
+        //   setState(() {
+        //     _lastUpdateLocation = details.localPosition;
+        //     _lastTouchMillisecond = DateTime.now().millisecondsSinceEpoch;
+        //     _updateAllGalleryItemTransform(details.delta.dx);
+        //   });
+        // },
         child: _buildWidgetList(),
       ),
     );
