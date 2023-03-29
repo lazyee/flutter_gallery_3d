@@ -28,12 +28,18 @@ class _PageViewDemoState extends State<PageViewDemo> {
 
   Widget buildGallery3D() {
     return Gallery3D(
-        itemCount: imageUrlList.length,
+        controller: Gallery3DController(itemCount: imageUrlList.length),
         width: MediaQuery.of(context).size.width,
         height: 300,
         isClip: true,
 
         // ellipseHeight: 80,
+        // currentIndex: currentIndex,
+        onItemChanged: (index) {
+          setState(() {
+            this.currentIndex = index;
+          });
+        },
         itemConfig: GalleryItemConfig(
           width: 220,
           height: 300,
@@ -44,12 +50,6 @@ class _PageViewDemoState extends State<PageViewDemo> {
           //       color: Color(0x90000000), offset: Offset(2, 0), blurRadius: 5)
           // ]
         ),
-        currentIndex: currentIndex,
-        onItemChanged: (index) {
-          setState(() {
-            this.currentIndex = index;
-          });
-        },
         onClickItem: (index) => print("currentIndex:$index"),
         itemBuilder: (context, index) {
           return Image.network(
@@ -64,6 +64,7 @@ class _PageViewDemoState extends State<PageViewDemo> {
     return Scaffold(
         appBar: AppBar(title: Text("PageViewDemo")),
         body: PageView.builder(
+            controller: PageController(),
             itemCount: 3,
             itemBuilder: ((context, index) {
               return Column(

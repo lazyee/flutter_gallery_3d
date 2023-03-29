@@ -1,3 +1,6 @@
+## [1.1.0] - 20230103
+1.Added Controller to Gallery3D control
+2.Refactored the code and fixed the issues found
 ## [1.0.5] - 20230103
 Resolves widget does not scroll in pageview
 ## [1.0.4] - 20220216
