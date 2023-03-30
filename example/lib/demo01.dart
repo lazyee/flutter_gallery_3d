@@ -33,33 +33,38 @@ class _Demo01State extends State<Demo01> {
   @override
   void initState() {
     controller = Gallery3DController(
-      itemCount: imageUrlList.length,
-      autoLoop: true,
-    );
+        itemCount: imageUrlList.length,
+        autoLoop: true,
+        ellipseHeight: 0,
+        minScale: 0.4);
     super.initState();
   }
 
   Widget buildGallery3D() {
     return Gallery3D(
         controller: controller,
+        padding: EdgeInsets.fromLTRB(0, 0, 0, 10),
         itemConfig: GalleryItemConfig(
           width: 220,
           height: 300,
           radius: 10,
-          isShowTransformMask: false,
+          // isShowTransformMask: true,
           // shadows: [
           //   BoxShadow(
           //       color: Color(0x90000000), offset: Offset(2, 0), blurRadius: 5)
           // ]
         ),
         width: MediaQuery.of(context).size.width,
-        height: 300,
+        height: 500,
         isClip: true,
+
         // currentIndex: currentIndex,
         onItemChanged: (index) {
-          setState(() {
-            this.currentIndex = index;
-          });
+          // setState(() {
+          //   this.currentIndex = index;
+          // });
+
+          // print(index);
         },
         onClickItem: (index) => print("currentIndex:$index"),
         itemBuilder: (context, index) {

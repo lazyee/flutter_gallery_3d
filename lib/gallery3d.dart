@@ -11,6 +11,7 @@ class Gallery3D extends StatefulWidget {
   final ValueChanged<int>? onClickItem;
   final Gallery3DController controller;
   final GalleryItemConfig itemConfig;
+  final EdgeInsetsGeometry? padding;
   final bool isClip;
 
   Gallery3D(
@@ -19,6 +20,7 @@ class Gallery3D extends StatefulWidget {
       this.onItemChanged,
       this.isClip = true,
       this.height,
+      this.padding,
       required this.itemConfig,
       required this.controller,
       required this.width,
@@ -103,8 +105,6 @@ class _Gallery3DState extends State<Gallery3D>
     return Container(
       width: widget.width,
       height: widget.height ?? widget.itemConfig.height,
-      padding: EdgeInsets.fromLTRB(
-          0, controller.ellipseHeight / 2, 0, controller.ellipseHeight / 2),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onHorizontalDragCancel: (() {
@@ -147,6 +147,7 @@ class _Gallery3DState extends State<Gallery3D>
   void _scrollToAngle(double angle) {
     _autoScrollAnimationController =
         AnimationController(duration: Duration(milliseconds: 400), vsync: this);
+
     Animation animation;
 
     if (angle.ceil().abs() == 0) return;
@@ -209,11 +210,10 @@ class _Gallery3DState extends State<Gallery3D>
 
       if (item.angle > 180 - controller.unitAngle / 2 &&
           item.angle < 180 + controller.unitAngle / 2) {
-        controller.currentIndex = i;
-
-        Future.delayed(Duration.zero, () {
+        if (controller.currentIndex != i) {
+          controller.currentIndex = i;
           widget.onItemChanged?.call(controller.currentIndex);
-        });
+        }
       }
       _updateWidgetIndexOnStack();
     }
@@ -322,7 +322,7 @@ class GalleryItem extends StatelessWidget {
     required this.transformInfo,
     required this.config,
     required this.builder,
-    this.minScale = 0.8,
+    this.minScale = 0.4,
     this.onClick,
     this.ellipseHeight = 0,
   }) : super(key: key);
@@ -400,9 +400,9 @@ class GalleryItemConfig {
 class Gallery3DController {
   double perimeter = 0; //周长
   double unitAngle = 0; //单位角度
-  double minScale = 0.4; //最小缩放值
+  final double minScale; //最小缩放值
   double widgetWidth = 0; //控件宽度
-  double ellipseHeight = 0; //椭圆高度
+  double ellipseHeight; //椭圆高度
   int itemCount;
   late GalleryItemConfig itemConfig;
   int currentIndex = 0;
@@ -414,7 +414,9 @@ class Gallery3DController {
   double baseAngleOffset = 0; //180度的基准角度偏差
   Gallery3DController(
       {required this.itemCount,
+      this.ellipseHeight = 0,
       this.autoLoop = true,
+      this.minScale = 0.4,
       this.delayTime = 5000,
       this.scrollTime = 1000})
       : assert(itemCount >= 3, 'ItemCount must be greater than or equal to 3');
@@ -423,7 +425,7 @@ class Gallery3DController {
     this.itemConfig = itemConfig;
     unitAngle = 360 / itemCount;
     // perimeter = calculatePerimeter(itemConfig.width * 0.8, 50);
-    perimeter = calculatePerimeter(widgetWidth * 0.8, 50);
+    perimeter = calculatePerimeter(widgetWidth * 0.7, 50);
 
     _galleryItemTransformInfoList.clear();
     for (var i = 0; i < itemCount; i++) {
@@ -492,9 +494,13 @@ class Gallery3DController {
       angle = 360 - angle;
     }
 
+    angle += 30; //修正一下，视觉效果貌似更好
+
     var scale = angle / 180.0;
 
-    if (scale < minScale) {
+    if (scale > 1) {
+      scale = 1;
+    } else if (scale < minScale) {
       scale = minScale;
     }
 
@@ -516,7 +522,8 @@ class Gallery3DController {
   ///计算椭圆周长
   double calculatePerimeter(double width, double height) {
     // 椭圆周长公式：L=2πb+4(a-b)
-    var a = width * 0.8;
+    var a = width;
+    // var a = width * 0.8;
     var b = height;
     return 2 * pi * b + 4 * (a - b);
   }
