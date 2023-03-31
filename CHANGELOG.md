@@ -1,4 +1,6 @@
-## [1.1.0] - 20230103
+## [1.1.1] - 20230331
+1.Optimized code structure
+## [1.1.0] - 20230329
 1.Added Controller to Gallery3D control
 2.Refactored the code and fixed the issues found
 ## [1.0.5] - 20230103
