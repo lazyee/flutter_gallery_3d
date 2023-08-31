@@ -560,7 +560,8 @@ class Gallery3DController {
   }
 }
 
-abstract class Gallery3DMixin {
-  void animateTo(angle);
-  void jumpTo(angle);
+
+mixin class Gallery3DMixin {
+  void animateTo(angle) {}
+  void jumpTo(angle) {}
 }
