@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gallery_3d/gallery3d.dart';
 
 class PageViewDemo extends StatefulWidget {
-  const PageViewDemo({key});
+  const PageViewDemo({super.key});
 
   @override
   State<PageViewDemo> createState() => _PageViewDemoState();
@@ -37,10 +38,10 @@ class _PageViewDemoState extends State<PageViewDemo> {
         // currentIndex: currentIndex,
         onItemChanged: (index) {
           setState(() {
-            this.currentIndex = index;
+            currentIndex = index;
           });
         },
-        itemConfig: GalleryItemConfig(
+        itemConfig: const GalleryItemConfig(
           width: 220,
           height: 300,
           radius: 10,
@@ -50,7 +51,9 @@ class _PageViewDemoState extends State<PageViewDemo> {
           //       color: Color(0x90000000), offset: Offset(2, 0), blurRadius: 5)
           // ]
         ),
-        onClickItem: (index) => print("currentIndex:$index"),
+        onClickItem: (index) {
+          if (kDebugMode) print("currentIndex:$index");
+        },
         itemBuilder: (context, index) {
           return Image.network(
             imageUrlList[index],
@@ -62,14 +65,16 @@ class _PageViewDemoState extends State<PageViewDemo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text("PageViewDemo")),
-        body: PageView.builder(
-            controller: PageController(),
-            itemCount: 3,
-            itemBuilder: ((context, index) {
-              return Column(
-                children: [buildGallery3D()],
-              );
-            })));
+      appBar: AppBar(title: const Text("PageViewDemo")),
+      body: PageView.builder(
+        controller: PageController(),
+        itemCount: 3,
+        itemBuilder: ((context, index) {
+          return Column(
+            children: [buildGallery3D()],
+          );
+        }),
+      ),
+    );
   }
 }
