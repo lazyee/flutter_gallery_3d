@@ -67,14 +67,14 @@ class _Gallery3DState extends State<Gallery3D>
       });
     }
 
-    WidgetsBinding.instance?.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
 
     super.initState();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance?.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _timer = null;
     _autoScrollAnimationController?.stop(canceled: true);
@@ -559,7 +559,6 @@ class Gallery3DController {
     vsync.jumpTo(getOffsetAngleFormTargetIndex(index));
   }
 }
-
 
 mixin class Gallery3DMixin {
   void animateTo(angle) {}

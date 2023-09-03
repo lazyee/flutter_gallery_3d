@@ -1,10 +1,11 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gallery_3d/gallery3d.dart';
 
 class Demo01 extends StatefulWidget {
-  const Demo01({key});
+  const Demo01({super.key});
 
   @override
   State<Demo01> createState() => _Demo01State();
@@ -43,8 +44,8 @@ class _Demo01State extends State<Demo01> {
   Widget buildGallery3D() {
     return Gallery3D(
         controller: controller,
-        padding: EdgeInsets.fromLTRB(0, 0, 0, 10),
-        itemConfig: GalleryItemConfig(
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+        itemConfig: const GalleryItemConfig(
           width: 220,
           height: 300,
           radius: 10,
@@ -66,7 +67,9 @@ class _Demo01State extends State<Demo01> {
 
           // print(index);
         },
-        onClickItem: (index) => print("currentIndex:$index"),
+        onClickItem: (index) {
+          if (kDebugMode) print("currentIndex:$index");
+        },
         itemBuilder: (context, index) {
           return Image.network(
             imageUrlList[index],
@@ -79,7 +82,7 @@ class _Demo01State extends State<Demo01> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("demo01"),
+        title: const Text("demo01"),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -90,9 +93,9 @@ class _Demo01State extends State<Demo01> {
                   imageUrl: imageUrlList[currentIndex],
                 ),
                 Container(
-                  padding: EdgeInsets.only(top: 40),
+                  padding: const EdgeInsets.only(top: 40),
+                  margin: const EdgeInsets.fromLTRB(0, 20, 0, 20),
                   child: buildGallery3D(),
-                  margin: EdgeInsets.fromLTRB(0, 20, 0, 20),
                 ),
               ],
             ),
@@ -100,12 +103,12 @@ class _Demo01State extends State<Demo01> {
                 onPressed: () {
                   controller.animateTo(1);
                 },
-                child: Text("animate to 1")),
+                child: const Text("animate to 1")),
             ElevatedButton(
                 onPressed: () {
                   controller.animateTo(2);
                 },
-                child: Text("animate to 2"))
+                child: const Text("animate to 2"))
           ],
         ),
       ),
@@ -115,12 +118,12 @@ class _Demo01State extends State<Demo01> {
 
 class BackgrounBlurView extends StatelessWidget {
   final String imageUrl;
-  BackgrounBlurView({Key? key, required this.imageUrl}) : super(key: key);
+  const BackgrounBlurView({Key? key, required this.imageUrl}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
-      Container(
+      SizedBox(
         height: 200,
         width: MediaQuery.of(context).size.width,
         child: Image.network(
