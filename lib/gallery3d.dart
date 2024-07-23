@@ -70,6 +70,8 @@ class _Gallery3DState extends State<Gallery3D>
     WidgetsBinding.instance.addObserver(this);
 
     super.initState();
+    animateTo(controller.getOffsetAngleFormTargetIndex(
+        getNextIndex(widget.controller.currentIndex)));
   }
 
   @override
@@ -423,7 +425,7 @@ class Gallery3DController {
 
   void init(GalleryItemConfig itemConfig) {
     this.itemConfig = itemConfig;
-    unitAngle = 360 / itemCount;
+    unitAngle = 90 / itemCount;
     // perimeter = calculatePerimeter(itemConfig.width * 0.8, 50);
     perimeter = calculatePerimeter(widgetWidth * 0.7, 50);
 
@@ -494,7 +496,7 @@ class Gallery3DController {
       angle = 360 - angle;
     }
 
-    angle += 30; //修正一下，视觉效果貌似更好
+    angle += 15; //修正一下，视觉效果貌似更好
 
     var scale = angle / 180.0;
 
@@ -503,13 +505,13 @@ class Gallery3DController {
     } else if (scale < minScale) {
       scale = minScale;
     }
-
+    print('$scale ---- $angle');
     return scale;
   }
 
   ///计算椭圆轨迹的点
   Offset calculateOffset(double angle) {
-    double width = widgetWidth * 0.7; //椭圆宽
+    double width = widgetWidth * 0.6; //椭圆宽
     double radiusOuterX = width / 2;
     double radiusOuterY = ellipseHeight;
 
@@ -522,9 +524,9 @@ class Gallery3DController {
   ///计算椭圆周长
   double calculatePerimeter(double width, double height) {
     // 椭圆周长公式：L=2πb+4(a-b)
-    var a = width;
+    var a = width * 0.8;
     // var a = width * 0.8;
-    var b = height;
+    var b = height * 0.8;
     return 2 * pi * b + 4 * (a - b);
   }
 

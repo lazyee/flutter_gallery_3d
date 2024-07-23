@@ -27,22 +27,23 @@ class _PageViewDemoState extends State<PageViewDemo> {
 
   int currentIndex = 0;
 
-  Widget buildGallery3D() {
+  Widget buildGallery3D(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     return Gallery3D(
-        controller: Gallery3DController(itemCount: imageUrlList.length),
-        width: MediaQuery.of(context).size.width,
+        controller: Gallery3DController(itemCount: imageUrlList.length, autoLoop: false),
+        
+        width: width,
         height: 300,
-        isClip: true,
+        isClip: false,
 
         // ellipseHeight: 80,
-        // currentIndex: currentIndex,
         onItemChanged: (index) {
           setState(() {
             currentIndex = index;
           });
         },
-        itemConfig: const GalleryItemConfig(
-          width: 220,
+        itemConfig: GalleryItemConfig(
+          width: width * 0.6,
           height: 300,
           radius: 10,
           isShowTransformMask: false,
@@ -71,7 +72,7 @@ class _PageViewDemoState extends State<PageViewDemo> {
         itemCount: 3,
         itemBuilder: ((context, index) {
           return Column(
-            children: [buildGallery3D()],
+            children: [buildGallery3D(context)],
           );
         }),
       ),
